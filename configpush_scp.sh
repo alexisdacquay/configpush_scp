@@ -1,6 +1,6 @@
 #!/bin/bash
 # by Alexis Dacquay, ad@arista.com
-# version 1.31
+# version 1.4
 #
 # examples of aliases and command examples to setup this script:
 # alias backup bash /mnt/flash/configpush_scp.sh 1.1.1.1
@@ -10,44 +10,52 @@
 #   trigger on-startup-config
 #   action bash /mnt/flash/configpush_scp.sh 1.1.1.1
 
-if [ ! $1 ]; then
- echo "Usage: configpush_scp.sh <DESTINATION IP>"
+if [ ! $1 ] || [ ! $2 ]; then
+ echo "Usage: configpush_scp.sh <USER> <DESTINATION IP> [<REMOTE PATH>]"
  exit 0
 fi
 
 echo "Informational: Automated SCP transfer requires that SSH keys are setup"
-# Example, from Arista EOS kernel bash :
+# Example, from Arista EOS kernel bash; test afterwards with 'sudo ssh user@server':
 # sudo cat /persist/secure/ssh_host_dsa_key.pub | ssh user@server 'cat >> .ssh/authorized_keys'
 
-IP=$1
+USER=$1
+IP=$2
 NOW=$(date +%Y-%m-%d.%H%M%S)
-USER='user'
-CONFIGPATH='MyPath/configs'
+if [ $3 ]
+then
+  CONFIGPATH=$3
+else
+  CONFIGPATH='~/'
+fi
+
+echo "Informational: Timestamp is $NOW"
 
 # Capturing Running-config and diff
-echo '-------------------- diff running-config <> startup-config ------------------------' >> /tmp/configdump_run
-FastCli -p 15 -c 'show run diff >> file:/tmp/configdump_run'
+echo '-------------------- diff running-config <> startup-config ------------------------' >> /tmp/configdump_run_diff
+FastCli -p 15 -c 'show run diff > file:/tmp/configdump_run_diff'
 sleep 1
-echo '--------------------------------- sh run -----------------------------------------' >> /tmp/configdump_run
-FastCli -p 15 -c 'show run >> file:/tmp/configdump_run'
+FastCli -p 15 -c 'show run > file:/tmp/configdump_run'
 sleep 1
-sudo scp /tmp/configdump_run $USER@$IP:$CONFIGPATH/$HOSTNAME-run-$NOW.cfg
-sudo scp /tmp/configdump_run $USER@$IP:$CONFIGPATH/$HOSTNAME-run-latest.cfg
+sudo scp -o LogLevel=ERROR /tmp/configdump_run $USER@$IP:$CONFIGPATH/$HOSTNAME-run-$NOW.cfg
+sudo scp -o LogLevel=ERROR /tmp/configdump_run $USER@$IP:$CONFIGPATH/$HOSTNAME-run-latest.cfg
+sudo scp -o LogLevel=ERROR /tmp/configdump_run_diff $USER@$IP:$CONFIGPATH/$HOSTNAME-run-$NOW-diff.cfg
 sleep 1
+rm -rf /tmp/configdump_run_diff
 rm -rf /tmp/configdump_run
 
 # Capturing Startup-config
 FastCli -p 15 -c 'show start >> file:/tmp/configdump_start'
 sleep 1
-sudo scp /tmp/configdump_start $USER@$IP:$CONFIGPATH/$HOSTNAME-start-$NOW.cfg
-sudo scp /tmp/configdump_start $USER@$IP:$CONFIGPATH/$HOSTNAME-start-latest.cfg
+sudo scp -o LogLevel=ERROR /tmp/configdump_start $USER@$IP:$CONFIGPATH/$HOSTNAME-start-$NOW.cfg
+sudo scp -o LogLevel=ERROR /tmp/configdump_start $USER@$IP:$CONFIGPATH/$HOSTNAME-start-latest.cfg
 sleep 1
 rm -rf /tmp/configdump_start
 
 # Backing up files on flash
 tar -cf /tmp/flash_backup.tar /mnt/flash/*.* --exclude='*.swi'
 sleep 1
-sudo scp /tmp/flash_backup.tar $USER@$IP:$CONFIGPATH/$HOSTNAME-flash-$NOW.tar
+sudo scp -o LogLevel=ERROR /tmp/flash_backup.tar $USER@$IP:$CONFIGPATH/$HOSTNAME-flash-$NOW.tar
 sleep 1
 rm -rf /tmp/flash_backup.tar
 
