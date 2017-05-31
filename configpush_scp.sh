@@ -3,12 +3,12 @@
 # version 1.4
 #
 # examples of aliases and command examples to setup this script:
-# alias backup bash /mnt/flash/configpush_scp.sh 1.1.1.1
+# alias backup bash /mnt/flash/configpush_scp.sh user 1.1.1.1
 #
 # automated backup on config save:
 # event-handler config-push
 #   trigger on-startup-config
-#   action bash /mnt/flash/configpush_scp.sh 1.1.1.1
+#   action bash /mnt/flash/configpush_scp.sh user 1.1.1.1
 
 if [ ! $1 ] || [ ! $2 ]; then
  echo "Usage: configpush_scp.sh <USER> <DESTINATION IP> [<REMOTE PATH>]"
@@ -16,7 +16,10 @@ if [ ! $1 ] || [ ! $2 ]; then
 fi
 
 echo "Informational: Automated SCP transfer requires that SSH keys are setup"
-# Example, from Arista EOS kernel bash; test afterwards with 'sudo ssh user@server':
+# The above is only a failsafe info for people unaware (during setup); 
+# You may want to comment out for production.
+#
+# Setup example, from Arista EOS kernel bash; test afterwards with 'sudo ssh user@server':
 # sudo cat /persist/secure/ssh_host_dsa_key.pub | ssh user@server 'cat >> .ssh/authorized_keys'
 
 USER=$1
