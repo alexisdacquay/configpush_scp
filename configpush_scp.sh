@@ -1,6 +1,6 @@
 #!/bin/bash
 # by Alexis Dacquay, ad@arista.com
-# version 1.4
+# version 1.5
 #
 # examples of aliases and command examples to setup this script:
 # alias backup bash /mnt/flash/configpush_scp.sh user 1.1.1.1
@@ -56,7 +56,7 @@ sleep 1
 rm -rf /tmp/configdump_start
 
 # Backing up files on flash
-tar -cf /tmp/flash_backup.tar /mnt/flash/*.* --exclude='*.swi'
+tar -czvf /tmp/flash_backup.tar /mnt/flash --exclude='*.swi'
 sleep 1
 sudo scp -o LogLevel=ERROR /tmp/flash_backup.tar $USER@$IP:$CONFIGPATH/$HOSTNAME-flash-$NOW.tar
 sleep 1
